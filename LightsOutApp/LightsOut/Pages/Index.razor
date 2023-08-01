@@ -1,0 +1,166 @@
+﻿@page "/"
+
+<PageTitle>Lights Out</PageTitle>
+
+<h1 class="text-center">Are you ready to play!</h1>
+<form class="text-center">
+    <label for="playername">Name:</label>
+    <input type="text" name="name" id="playername" @bind="_name" />
+    <input type="button" value="Set Name" @onclick="SetName" />
+</form>
+
+@if (PlayerName == string.Empty)
+{
+    <h3 class="text-center mt-2">Please enter your name above!</h3>
+}
+else
+{
+    <h3 class="text-center mt-3">Thank you, @PlayerName</h3>
+    <p class="text-center">The game is simple, keep a watch for the F1 start lights.<br /> Once the lights go out its time to go racing, test your reflexes by clicking the luanch button as fast as possible.</p>
+    <p class="text-center mt-1">HOW FAST ARE YOU!</p>
+
+    @if (_ready == false)
+    {
+        <p class="text-center">Once you are ready to start, click start</p>
+        <div class="flexcontainter">            
+            <input class="text-center buttons" type="button" value="Start" @onclick="PlayerReady" />
+        </div>
+    }
+    else
+    {
+        <div class="racelights">
+            <div class="lightset">
+                <div class="nolight"></div>
+                <div class="@_lights[4]"></div>
+            </div>
+            <div class="lightset">
+                <div class="nolight"></div>
+                <div class="@_lights[3]"></div>
+            </div>
+            <div class="lightset">
+                <div class="nolight"></div>
+                <div class="@_lights[2]"></div>
+            </div>
+            <div class="lightset">
+                <div class="nolight"></div>
+                <div class="@_lights[1]"></div>
+            </div>
+            <div class="lightset">
+                <div class="nolight"></div>
+                <div class="@_lights[0]"></div>
+            </div>
+        </div>
+        <div class="flexcontainter mt-4">
+            <input class="text-center buttons" type="button" value="LAUNCH" @onclick="Launch" />
+        </div>        
+        <br />
+        @if (_falseStart)
+        {
+            <h1 class="text-center alert-danger">FALSE START</h1>
+            <div class="flexcontainter">
+                <input class="text-center buttons" type="button" value="Try again" @onclick="TryAgain" />
+            </div>
+            
+        }
+        else
+        {
+            <h1 class="text-center">@_launchTime</h1>
+            <div class="flexcontainter">                
+                <input class="text-center buttons" type="button" value="Try again" @onclick="TryAgain" />
+            </div>
+        }
+    }
+    <br />
+    <div class ="flexcontainter">
+        <input class="text-center buttons" type="button" value="Reset" @onclick="FullReset" />
+    </div>
+    
+}
+
+
+
+
+@code{
+
+    public string _name = string.Empty;
+    public DateTime _startTime;
+    public DateTime _endTime;
+    public string[] _lights = { "nolight", "nolight", "nolight", "nolight", "nolight"};
+    public TimeSpan _launchTime = TimeSpan.Zero;
+    public bool _ready = false;
+    public bool _lightsAreOut = false;
+    public bool _falseStart = false;
+
+    public string PlayerName = string.Empty;
+
+    public void SetName()
+    {
+        PlayerName = _name;
+    }
+
+    public async void PlayerReady()
+    {
+        _ready = true;
+        await LightsChange();
+        await LightsOut();
+        _lightsAreOut = true;
+        StateHasChanged();
+        _startTime = DateTime.Now;
+    }
+
+    public async Task LightsChange()
+    {
+        Random random = new();
+
+        for (int i = 0; i < _lights.Length; i++)
+        {
+            await Task.Delay(random.Next(1000, 2001));
+            _lights[i] = "redlight";
+            StateHasChanged();
+        }
+    }
+
+    public async Task LightsOut()
+    {
+        await Task.Delay(1500);
+        for (int i = 0; i < _lights.Length; i++)
+        {
+            _lights[i] = "nolight";
+        }
+    }
+
+    public void Launch()
+    {
+        if (_lightsAreOut)
+        {
+            _endTime = DateTime.Now;
+            _launchTime = _endTime - _startTime;
+            _lightsAreOut = true;
+            StateHasChanged(); 
+        }
+        else
+        {
+            _falseStart = true;
+        }
+    }
+
+    public void TryAgain()
+    {
+        _ready = false;
+        ResetTry();
+    }
+
+    public void ResetTry()
+    {
+        _lightsAreOut = false;
+        _falseStart = false;
+        _launchTime = TimeSpan.Zero;
+    }
+
+    public void FullReset()
+    {        
+        _name = string.Empty;
+        SetName();
+        TryAgain();
+    }
+}
